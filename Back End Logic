@@ -1,0 +1,130 @@
+package com.example.todo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+
+@SpringBootApplication
+@EntityScan(basePackages = "com.example.todo.tasks")  // Ensure this package is correct
+public class TodoApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(TodoApplication.class, args);
+	}
+
+}
+
+//-------------------Entity Class-------------------//
+package com.example.todo.tasks;
+
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "tasks")
+public class Task {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+    public String task;
+
+    public Task() {}
+
+    public Task(String task) {
+        this.task = task;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTask() {
+        return task;
+    }
+
+    public void setTask(String task) {
+        this.task = task;
+    }
+}
+
+
+//-------------------Repository Class-------------------//
+package com.example.todo.tasks;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TaskRepository extends JpaRepository<Task, Long>{
+}
+
+
+//-------------------Service Class-------------------//
+package com.example.todo.tasks;
+
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class TaskService {
+    private final TaskRepository taskRepository;
+    public TaskService(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
+    }
+
+    public List<Task> getAllTasks(){
+        return taskRepository.findAll();
+    }
+
+    public Task addTask(String task){
+        Task newTask = new Task(task);
+        return taskRepository.save(newTask);
+    }
+
+    public boolean deleteTask(Long id){
+        if (taskRepository.existsById(id)){
+            taskRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+}
+
+//-------------------Controller Class-------------------//
+
+package com.example.todo.tasks;
+
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/list")
+@CrossOrigin(origins = "http://localhost:5173")
+public class TaskController {
+
+    private final TaskService taskService;
+
+    public TaskController(TaskService taskService) {
+        this.taskService = taskService;
+    }
+
+    @GetMapping
+    public List<Task> getAllTasks(){
+
+        return taskService.getAllTasks();
+    }
+
+    @PostMapping("/add")
+    public Task newTask(@RequestBody String task){
+        return taskService.addTask(task);
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public boolean deleteTask(@PathVariable Long id){
+        return taskService.deleteTask(id);
+    }
+}
