@@ -1,0 +1,83 @@
+//API Call
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: "http://localhost:8080/list", // Base URL for all requests
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+export default api;
+
+//Main App
+import { useEffect, useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import api from './api'
+import './App.css'
+
+function App() {
+  
+  const [task, setTask] = useState('')
+  const [list, setList] = useState([])
+
+  useEffect(() => {
+    console.log("UseEffect is working");
+    
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+      const response = await api.get("");
+      console.log(response.data)
+      for (let i = 0; i<response.data.length; i++){
+        setList((prevList) => [...prevList, response.data[i]])
+        
+      }
+      console.log(list)
+  };
+
+  
+
+  const addTask = async (task) => {
+    try{
+      if (task.trim()){
+        const response = await api.post("/add", task)
+        setList(prevList => [...prevList, response.data])
+        setTask("")
+      }
+    } catch(error){
+      console.error("Error adding task.", error)
+    }
+  }
+
+  const deleteTask = async (id) => {
+    try {
+      await api.delete(`/delete/${id}`)
+      setList(list.filter((task) => task.id !== id))
+    } catch(error){
+      console.error("Error deleting task.", error)
+    }
+  }
+
+
+  return(
+    <>
+    <div className='h-screen bg-gray-400 flex flex-col items-center'>
+      <h1 className='mt-24 text-4xl font-bold'>To Do List</h1>
+      <input type="text" value={task} onChange={(e)=>setTask(e.target.value)} className='mt-5 mb-5 bg-white w-60 h-9 rounded-md'/>
+      <button className='w-20 bg-blue-600 cursor-pointer mb-10' onClick={()=>addTask(task)}>Add Task</button>
+      <ul>
+        {list.map((task) => (
+          <li key={task.id} className='w-70 flex justify-evenly mb-2'>
+            {task.task.replaceAll('"', '')}
+            <button onClick={()=>deleteTask(task.id)} className='w-16 border-2 cursor-pointer'>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+    </>
+  )
+}
+
+export default App
